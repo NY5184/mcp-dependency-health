@@ -1,0 +1,12 @@
+[project]
+name = "mcp-dependency-health"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp>=1.25.0",
+    "packaging>=25.0",
+    "pydantic>=2.12.5",
+]
