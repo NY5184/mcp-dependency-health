@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 import httpx
+from packaging.version import Version, InvalidVersion
 
 
 @dataclass(frozen=True)
@@ -24,9 +25,27 @@ async def fetch_npm_latest(package_name: str) -> RegistryResult:
     dist_tags = data.get("dist-tags") or {}
     latest = dist_tags.get("latest")
     if not latest:
-        # fallback: no dist-tag
-        versions = list((data.get("versions") or {}).keys())
-        latest = sorted(versions)[-1] if versions else "unknown"
+        # fallback: no dist-tag - use semantic version sorting
+        version_strings = list((data.get("versions") or {}).keys())
+        if version_strings:
+            # Parse versions and filter out invalid ones
+            valid_versions = []
+            for v in version_strings:
+                try:
+                    valid_versions.append(Version(v))
+                except InvalidVersion:
+                    # Skip invalid version strings
+                    continue
+            
+            if valid_versions:
+                # Get the highest semantic version
+                latest = str(max(valid_versions))
+            else:
+                # All versions were invalid, fall back to string sort
+                latest = sorted(version_strings)[-1]
+        else:
+            latest = "unknown"
+        
         return RegistryResult(latest=latest, note="missing dist-tags.latest; used fallback")
 
     return RegistryResult(latest=str(latest))
