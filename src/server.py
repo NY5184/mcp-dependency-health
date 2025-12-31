@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-# Add project root to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-import asyncio
+import logging
 from typing import List
 
+import httpx
 from mcp.server.fastmcp import FastMCP
 
 from schemas.input import DependencyHealthInput, Ecosystem
@@ -20,6 +15,8 @@ from utils.versions import is_prerelease, is_up_to_date
 
 from src.services.registry_clients import fetch_npm_latest, fetch_pypi_latest
 
+# Configure logging for unexpected errors
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP("Dependency Health Checker MCP")
 
@@ -76,14 +73,50 @@ async def dependency_health_check(payload: dict) -> dict:
                         note="; ".join(note_parts) or None,
                     )
                 )
-            except Exception as e:
+            except httpx.HTTPStatusError as e:
+                # HTTP errors: 404 (not found), 500 (server error), etc.
+                note = f"HTTP {e.response.status_code}: package not found or unavailable"
                 results.append(
                     DependencyResult(
                         name=name,
                         current=current,
                         latest="unknown",
                         status="unknown",
-                        note=f"failed to query npm: {type(e).__name__}",
+                        note=note,
+                    )
+                )
+            except httpx.TimeoutException:
+                # Request took longer than 10 seconds
+                results.append(
+                    DependencyResult(
+                        name=name,
+                        current=current,
+                        latest="unknown",
+                        status="unknown",
+                        note="Request timed out after 10 seconds",
+                    )
+                )
+            except httpx.RequestError as e:
+                # Network/connection errors (DNS, connection refused, etc.)
+                results.append(
+                    DependencyResult(
+                        name=name,
+                        current=current,
+                        latest="unknown",
+                        status="unknown",
+                        note=f"Network error: {type(e).__name__}",
+                    )
+                )
+            except Exception as e:
+                # Catch truly unexpected errors and log them for debugging
+                logger.error(f"Unexpected error querying npm for {name}: {e}", exc_info=True)
+                results.append(
+                    DependencyResult(
+                        name=name,
+                        current=current,
+                        latest="unknown",
+                        status="unknown",
+                        note=f"Unexpected error: {type(e).__name__}",
                     )
                 )
 
@@ -115,14 +148,50 @@ async def dependency_health_check(payload: dict) -> dict:
                         note="; ".join(note_parts) or None,
                     )
                 )
-            except Exception as e:
+            except httpx.HTTPStatusError as e:
+                # HTTP errors: 404 (not found), 500 (server error), etc.
+                note = f"HTTP {e.response.status_code}: package not found or unavailable"
                 results.append(
                     DependencyResult(
                         name=name,
                         current=current,
                         latest="unknown",
                         status="unknown",
-                        note=f"failed to query PyPI: {type(e).__name__}",
+                        note=note,
+                    )
+                )
+            except httpx.TimeoutException:
+                # Request took longer than 10 seconds
+                results.append(
+                    DependencyResult(
+                        name=name,
+                        current=current,
+                        latest="unknown",
+                        status="unknown",
+                        note="Request timed out after 10 seconds",
+                    )
+                )
+            except httpx.RequestError as e:
+                # Network/connection errors (DNS, connection refused, etc.)
+                results.append(
+                    DependencyResult(
+                        name=name,
+                        current=current,
+                        latest="unknown",
+                        status="unknown",
+                        note=f"Network error: {type(e).__name__}",
+                    )
+                )
+            except Exception as e:
+                # Catch truly unexpected errors and log them for debugging
+                logger.error(f"Unexpected error querying PyPI for {name}: {e}", exc_info=True)
+                results.append(
+                    DependencyResult(
+                        name=name,
+                        current=current,
+                        latest="unknown",
+                        status="unknown",
+                        note=f"Unexpected error: {type(e).__name__}",
                     )
                 )
     else:
