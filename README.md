@@ -88,6 +88,39 @@ Returns a list of dependencies with:
 ## Project Structure
 
 ```
+mcp-dependency-health/
+├── main.py                      # Entry point (if needed)
+├── pyproject.toml       # Project configuration and dependcies
+├── uv.lock                     # Locked dependency versions
+├── README.md                   # Project documentation
+│
+├── src/                        # Main source code
+│   ├── __init__.py
+│   ├── server.py              # MCP server implementation
+│   └── services/              # Service layer
+│       ├── __init__.py
+│       ├── error_handlers.py  # Error handling utilities
+│       └── registry_clients.py # npm/PyPI registry clients
+│
+├── schemas/                   # Data schemas
+│   ├── __init__.py
+│   ├── input.py              # Input validation schemas
+│   └── output.py             # Output data schemas
+│
+├── utils/                    # Utility modules
+│   ├── __init__.py
+│   ├── file_finder.py       # Project file discovery
+│   ├── parsers.py           # Dependency file parsers
+│   └── versions.py          # Version comparison utilities
+│
+└── tests/                   # Test suite
+    ├── test_file_finder.py
+    ├── test_parsers_js.py
+    ├── test_parsers_py.py
+    ├── test_registry_clients.py
+    ├── test_server_sanity.py
+    └── test_versions.py
+```
 
 ## Development
 
@@ -141,8 +174,8 @@ If you see `ModuleNotFoundError`:
 ## License
 
 [Your License Here]
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
 
