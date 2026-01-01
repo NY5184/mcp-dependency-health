@@ -90,7 +90,7 @@ Returns a list of dependencies with:
 ```
 mcp-dependency-health/
 ├── main.py                      # Entry point (if needed)
-├── pyproject.toml       # Project configuration and dependcies
+├── pyproject.toml       # Project configuration and dependencies
 ├── uv.lock                     # Locked dependency versions
 ├── README.md                   # Project documentation
 │
@@ -173,7 +173,8 @@ If you see `ModuleNotFoundError`:
 
 ## License
 
-[Your License Here]
+MIT License
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
