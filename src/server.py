@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import List
 
 from mcp.server.fastmcp import FastMCP
@@ -22,10 +23,9 @@ async def check_javascript_dependencies(package_json_path) -> List[DependencyRes
     """
     Checks JavaScript dependencies defined in package.json.
     """
-    results: List[DependencyResult] = []
-
     deps = parse_package_json(package_json_path)
-    for name, current in deps.items():
+    
+    async def check_single_dependency(name: str, current: str) -> DependencyResult:
         try:
             reg = await fetch_npm_latest(name)
             latest = reg.latest
@@ -40,29 +40,35 @@ async def check_javascript_dependencies(package_json_path) -> List[DependencyRes
             if cmp_note:
                 note_parts.append(cmp_note)
 
-            results.append(
-                DependencyResult(
-                    name=name,
-                    current=current,
-                    latest=latest,
-                    status="up-to-date" if ok else "outdated",
-                    note="; ".join(note_parts) or None,
-                )
+            return DependencyResult(
+                name=name,
+                current=current,
+                latest=latest,
+                status="up-to-date" if ok else "outdated",
+                note="; ".join(note_parts) or None,
+                release_date=reg.release_date,
+                repository_url=reg.repository_url,
+                homepage_url=reg.homepage_url,
+                changelog_url=reg.changelog_url,
+                description=reg.description,
             )
         except Exception as e:
-            results.append(handle_registry_error(name, current, e, "npm"))
-
-    return results
+            return handle_registry_error(name, current, e, "npm")
+    
+    # Run all dependency checks in parallel
+    tasks = [check_single_dependency(name, current) for name, current in deps.items()]
+    results = await asyncio.gather(*tasks)
+    
+    return list(results)
 
 
 async def check_python_dependencies(requirements_path) -> List[DependencyResult]:
     """
     Checks Python dependencies defined in requirements.txt.
     """
-    results: List[DependencyResult] = []
-
     deps = parse_requirements_txt(requirements_path)
-    for name, spec in deps:
+    
+    async def check_single_dependency(name: str, spec: str) -> DependencyResult:
         current = f"{name}{spec}" if spec else name
         try:
             reg = await fetch_pypi_latest(name)
@@ -78,29 +84,50 @@ async def check_python_dependencies(requirements_path) -> List[DependencyResult]
             if cmp_note:
                 note_parts.append(cmp_note)
 
-            results.append(
-                DependencyResult(
-                    name=name,
-                    current=current,
-                    latest=latest,
-                    status="up-to-date" if ok else "outdated",
-                    note="; ".join(note_parts) or None,
-                )
+            return DependencyResult(
+                name=name,
+                current=current,
+                latest=latest,
+                status="up-to-date" if ok else "outdated",
+                note="; ".join(note_parts) or None,
+                release_date=reg.release_date,
+                repository_url=reg.repository_url,
+                homepage_url=reg.homepage_url,
+                changelog_url=reg.changelog_url,
+                description=reg.description,
             )
         except Exception as e:
-            results.append(handle_registry_error(name, current, e, "PyPI"))
-
-    return results
+            return handle_registry_error(name, current, e, "PyPI")
+    
+    # Run all dependency checks in parallel
+    tasks = [check_single_dependency(name, spec) for name, spec in deps]
+    results = await asyncio.gather(*tasks)
+    
+    return list(results)
 
 
 @mcp.tool()
 async def dependency_health_check(payload: dict) -> dict:
     """
-    Performs a comprehensive health check on project dependencies.
+Analyzes project dependencies and provides contextual data to assess upgrade impact.
 
-    Detects the ecosystem (JavaScript/Python), parses dependency files
-    (package.json or requirements.txt), queries package registries for
-    latest versions, and compares them against current versions.
+The tool detects JavaScript (package.json) or Python (requirements.txt) projects,
+queries npm/PyPI registries, and returns dependency health signals including version
+gaps, release dates, descriptions, and relevant URLs.
+
+Before calling this tool, ensure the input payload matches the expected input
+schema
+
+After calling this tool, the LLM may use the data to reason about whether and how
+to upgrade dependencies. Consider the package description to understand its role,
+release dates to assess stability, and major version gaps as potential indicators
+of breaking changes. Changelog and repository URLs are provided for optional
+deeper investigation.
+
+The tool does not make upgrade decisions. The LLM is expected to provide a
+high-level, reasoned recommendation (low / medium / high impact), beyond simple
+version comparison.
+
     """
     # Validate and normalize input
     inp = DependencyHealthInput(**payload)

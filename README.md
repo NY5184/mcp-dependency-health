@@ -12,6 +12,7 @@ A Model Context Protocol (MCP) server that performs comprehensive health checks 
 - ⚠️ **Outdated Dependency Detection**: Compares current versions with latest releases
 - 🚨 **Pre-release Detection**: Identifies pre-release versions
 - 📊 **Detailed Status Reports**: Provides comprehensive information about each dependency
+- 📝 **Rich Contextual Information**: Includes changelog URLs, release dates, repository links, and descriptions to help LLMs provide meaningful upgrade advice
 
 ## Installation
 
@@ -76,14 +77,42 @@ Returns a list of dependencies with:
 - `latest`: Latest version available in registry
 - `status`: `"up-to-date"`, `"outdated"`, or `"unknown"`
 - `note`: Additional information (optional)
+- `release_date`: When the latest version was released (optional)
+- `repository_url`: Link to source code repository (optional)
+- `homepage_url`: Project homepage (optional)
+- `changelog_url`: Link to changelog/release notes (optional)
+- `description`: Short package description (optional)
 
-**Example:**
+**Example Input:**
 ```json
 {
   "project_path": "/path/to/your/project",
   "ecosystem": "auto"
 }
 ```
+
+**Example Output:**
+```json
+{
+  "dependencies": [
+    {
+      "name": "react",
+      "current": "^18.0.0",
+      "latest": "18.2.0",
+      "status": "outdated",
+      "release_date": "2022-06-14T16:55:41.036Z",
+      "repository_url": "https://github.com/facebook/react",
+      "homepage_url": "https://react.dev/",
+      "changelog_url": "https://github.com/facebook/react/releases",
+      "description": "React is a JavaScript library for building user interfaces."
+    }
+  ]
+}
+```
+
+With this contextual information, an LLM can visit the changelog URL and provide specific advice like:
+- "React 18.2.0 includes bug fixes for Suspense and fixes a memory leak in development mode. Safe to upgrade."
+- "This release was from June 2022, so it's well-tested and stable."
 
 ## Project Structure
 
@@ -149,9 +178,9 @@ uv run pytest
 1. **File Discovery**: Scans the project directory for `package.json` or `requirements.txt`
 2. **Ecosystem Detection**: Automatically determines if it's a JavaScript or Python project
 3. **Dependency Parsing**: Extracts package names and version specifications
-4. **Registry Queries**: Queries npm or PyPI for the latest versions
+4. **Registry Queries**: Queries npm or PyPI for the latest versions and contextual information
 5. **Version Comparison**: Compares current versions with latest releases
-6. **Status Report**: Returns detailed information about each dependency
+6. **Status Report**: Returns detailed information about each dependency with links to changelogs and release notes
 
 ## Troubleshooting
 
