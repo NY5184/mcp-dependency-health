@@ -27,7 +27,7 @@ A Model Context Protocol (MCP) server that performs comprehensive health checks 
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/NY5184/mcp-dependency-health.git
 cd mcp-dependency-health
 ```
 
