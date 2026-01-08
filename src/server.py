@@ -111,6 +111,21 @@ async def dependency_health_check(payload: dict) -> dict:
     """
 Analyzes project dependencies and provides contextual data to assess upgrade impact.
 
+**Scope Limitations:**
+This tool currently supports only the following package managers:
+- JavaScript: npm (package.json)
+- Python: pip (requirements.txt)
+
+Other package managers are NOT supported yet, including but not limited to:
+- Poetry (pyproject.toml)
+- Pipenv (Pipfile)
+- Cargo (Cargo.toml)
+- Go modules (go.mod)
+- Maven/Gradle (pom.xml, build.gradle)
+- Composer (composer.json)
+- NuGet (.csproj, packages.config)
+- And others
+
 The tool detects JavaScript (package.json) or Python (requirements.txt) projects,
 queries npm/PyPI registries, and returns dependency health signals including version
 gaps, release dates, descriptions, and relevant URLs.
@@ -152,13 +167,16 @@ version comparison.
         results = await check_python_dependencies(files["requirements_txt"])
 
     else:
+        # No supported dependency file found
+        supported_managers = "npm (package.json) and pip (requirements.txt)"
+        unsupported_examples = "Poetry, Pipenv, Cargo, Go modules, Maven/Gradle, Composer, NuGet, etc."
         results.append(
             DependencyResult(
-                name="(no dependency file found)",
+                name="(no supported dependency file found)",
                 current="",
                 latest="",
                 status="unknown",
-                note="expected package.json or requirements.txt in project_path",
+                note=f"This project uses an unsupported or missing dependency manager. Currently supported: {supported_managers}. Unsupported package managers include: {unsupported_examples}",
             )
         )
 

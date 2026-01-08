@@ -5,9 +5,9 @@ A Model Context Protocol (MCP) server that performs comprehensive health checks 
 ## Features
 
 - 🔍 **Automatic Ecosystem Detection**: Detects whether your project is JavaScript or Python
-- 📦 **Multi-Package Manager Support**: 
-  - JavaScript: `package.json` (npm/yarn/pnpm)
-  - Python: `requirements.txt`
+- 📦 **Package Manager Support**: 
+  - JavaScript: npm-compatible (`package.json`)
+  - Python: pip (`requirements.txt`)
 - 🔄 **Real-time Registry Queries**: Fetches latest versions from npm and PyPI
 - ⚠️ **Outdated Dependency Detection**: Compares current versions with latest releases
 - 🚨 **Pre-release Detection**: Identifies pre-release versions
@@ -181,6 +181,29 @@ uv run pytest
 4. **Registry Queries**: Queries npm or PyPI for the latest versions and contextual information
 5. **Version Comparison**: Compares current versions with latest releases
 6. **Status Report**: Returns detailed information about each dependency with links to changelogs and release notes
+
+## Limitations
+
+This tool has **limited package manager support**. It currently only supports:
+
+### Supported Package Managers
+- **JavaScript**: npm (via `package.json`)
+- **Python**: pip (via `requirements.txt`)
+
+### Unsupported Package Managers
+The following package managers are **not currently supported**:
+- **Python**: Poetry (`pyproject.toml`), Pipenv (`Pipfile`), Conda (`environment.yml`)
+- **Rust**: Cargo (`Cargo.toml`)
+- **Go**: Go modules (`go.mod`)
+- **Java**: Maven (`pom.xml`), Gradle (`build.gradle`)
+- **PHP**: Composer (`composer.json`)
+- **.NET**: NuGet (`.csproj`, `packages.config`)
+- **Ruby**: Bundler (`Gemfile`)
+- **Other**: Any other package manager not listed above
+
+When a project uses an unsupported package manager or no supported dependency file is found, the tool will return a dependency result with:
+- `status`: `"unknown"`
+- A clear note explaining that the project uses an unsupported dependency manager and listing the currently supported ones
 
 ## Troubleshooting
 
