@@ -47,9 +47,7 @@ async def check_javascript_dependencies(package_json_path) -> List[DependencyRes
                 status="up-to-date" if ok else "outdated",
                 note="; ".join(note_parts) or None,
                 release_date=reg.release_date,
-                repository_url=reg.repository_url,
-                homepage_url=reg.homepage_url,
-                changelog_url=reg.changelog_url,
+                changelog_content=reg.changelog_content,
                 description=reg.description,
             )
         except Exception as e:
@@ -91,9 +89,7 @@ async def check_python_dependencies(requirements_path) -> List[DependencyResult]
                 status="up-to-date" if ok else "outdated",
                 note="; ".join(note_parts) or None,
                 release_date=reg.release_date,
-                repository_url=reg.repository_url,
-                homepage_url=reg.homepage_url,
-                changelog_url=reg.changelog_url,
+                changelog_content=reg.changelog_content,
                 description=reg.description,
             )
         except Exception as e:
@@ -111,37 +107,27 @@ async def dependency_health_check(payload: dict) -> dict:
     """
 Analyzes project dependencies and provides contextual data to assess upgrade impact.
 
-**Scope Limitations:**
-This tool currently supports only the following package managers:
-- JavaScript: npm (package.json)
-- Python: pip (requirements.txt)
+Supports: npm (package.json) and pip (requirements.txt) only.
+Other package managers (Poetry, Pipenv, Cargo, Go modules, Maven, Gradle, Composer, NuGet, etc.) are not supported.
 
-Other package managers are NOT supported yet, including but not limited to:
-- Poetry (pyproject.toml)
-- Pipenv (Pipfile)
-- Cargo (Cargo.toml)
-- Go modules (go.mod)
-- Maven/Gradle (pom.xml, build.gradle)
-- Composer (composer.json)
-- NuGet (.csproj, packages.config)
-- And others
+Returns for each dependency: name, current version, latest version, status, changelog_content
+(actual release notes or explanatory message), description, and release_date.
 
-The tool detects JavaScript (package.json) or Python (requirements.txt) projects,
-queries npm/PyPI registries, and returns dependency health signals including version
-gaps, release dates, descriptions, and relevant URLs.
+**When to use this tool:**
+- User asks about dependency versions/updates in a specific project
+- User requests dependency health check or audit
+- Before suggesting upgrades that require inspecting actual project dependencies
 
-Before calling this tool, ensure the input payload matches the expected input
-schema
+**How to analyze results:**
+1. Use `changelog_content` to identify specific changes, bug fixes, breaking changes
+2. State that assessment is limited if changelog could not be fetched
+3. Direct user to source URL if mentioned in `changelog_content`
+4. Do not infer changes not explicitly stated in `changelog_content`
+5. Use description and release_date to assess maturity/stability
+6. Consider major version gaps as potential breaking change indicators
 
-After calling this tool, the LLM may use the data to reason about whether and how
-to upgrade dependencies. Consider the package description to understand its role,
-release dates to assess stability, and major version gaps as potential indicators
-of breaking changes. Changelog and repository URLs are provided for optional
-deeper investigation.
-
-The tool does not make upgrade decisions. The LLM is expected to provide a
-high-level, reasoned recommendation (low / medium / high impact), beyond simple
-version comparison.
+Provide recommendations (low/medium/high impact) based on risk, scope, and maintenance
+implications—not just version differences.
 
     """
     # Validate and normalize input
@@ -176,6 +162,7 @@ version comparison.
                 current="",
                 latest="",
                 status="unknown",
+                changelog_content="No dependency analysis performed. This project uses an unsupported or missing dependency manager.",
                 note=f"This project uses an unsupported or missing dependency manager. Currently supported: {supported_managers}. Unsupported package managers include: {unsupported_examples}",
             )
         )

@@ -28,6 +28,7 @@ def handle_registry_error(name: str, current: str, error: Exception, registry_na
             current=current,
             latest="unknown",
             status="unknown",
+            changelog_content=f"Changelog could not be fetched. Package not found or unavailable in {registry_name} registry (HTTP {error.response.status_code}).",
             note=note,
         )
     elif isinstance(error, httpx.TimeoutException):
@@ -37,6 +38,7 @@ def handle_registry_error(name: str, current: str, error: Exception, registry_na
             current=current,
             latest="unknown",
             status="unknown",
+            changelog_content=f"Changelog could not be fetched. Request to {registry_name} registry timed out.",
             note="Request timed out after 10 seconds",
         )
     elif isinstance(error, httpx.RequestError):
@@ -46,6 +48,7 @@ def handle_registry_error(name: str, current: str, error: Exception, registry_na
             current=current,
             latest="unknown",
             status="unknown",
+            changelog_content=f"Changelog could not be fetched. Network error connecting to {registry_name} registry.",
             note=f"Network error: {type(error).__name__}",
         )
     else:
@@ -56,6 +59,7 @@ def handle_registry_error(name: str, current: str, error: Exception, registry_na
             current=current,
             latest="unknown",
             status="unknown",
+            changelog_content=f"Changelog could not be fetched. An unexpected error occurred while querying {registry_name} registry.",
             note=f"Unexpected error: {type(error).__name__}",
         )
 

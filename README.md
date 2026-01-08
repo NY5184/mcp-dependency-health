@@ -12,7 +12,9 @@ A Model Context Protocol (MCP) server that performs comprehensive health checks 
 - ⚠️ **Outdated Dependency Detection**: Compares current versions with latest releases
 - 🚨 **Pre-release Detection**: Identifies pre-release versions
 - 📊 **Detailed Status Reports**: Provides comprehensive information about each dependency
-- 📝 **Rich Contextual Information**: Includes changelog URLs, release dates, repository links, and descriptions to help LLMs provide meaningful upgrade advice
+- 🤖 **LLM-First Design**: Clean, text-focused output designed for optimal LLM consumption
+- 🚀 **Automatic Changelog Fetching**: Fetches actual release notes from GitHub releases so LLMs can analyze specific changes, bug fixes, and breaking changes without additional web requests
+- 📝 **Always Actionable**: Every dependency includes meaningful changelog content - either actual release notes or clear explanations when fetching fails
 
 ## Installation
 
@@ -76,11 +78,9 @@ Returns a list of dependencies with:
 - `current`: Currently specified version
 - `latest`: Latest version available in registry
 - `status`: `"up-to-date"`, `"outdated"`, or `"unknown"`
+- `changelog_content`: Always present - contains actual release notes when successfully fetched, or an explanatory message with source link if fetching failed
 - `note`: Additional information (optional)
 - `release_date`: When the latest version was released (optional)
-- `repository_url`: Link to source code repository (optional)
-- `homepage_url`: Project homepage (optional)
-- `changelog_url`: Link to changelog/release notes (optional)
 - `description`: Short package description (optional)
 
 **Example Input:**
@@ -100,17 +100,27 @@ Returns a list of dependencies with:
       "current": "^18.0.0",
       "latest": "18.2.0",
       "status": "outdated",
+      "changelog_content": "Release v18.2.0:\n\n## Fixes\n- Fix memory leak in development mode\n- Fix Suspense bug with nested components\n- Improve TypeScript definitions\n\n## Features\n- Add useId hook\n- Suspense improvements",
       "release_date": "2022-06-14T16:55:41.036Z",
-      "repository_url": "https://github.com/facebook/react",
-      "homepage_url": "https://react.dev/",
-      "changelog_url": "https://github.com/facebook/react/releases",
       "description": "React is a JavaScript library for building user interfaces."
     }
   ]
 }
 ```
 
-With this contextual information, an LLM can visit the changelog URL and provide specific advice like:
+**LLM-First Design:**
+The output is designed for optimal LLM consumption:
+- ✅ **No URL clutter** - URLs are used internally but not exposed in the output
+- ✅ **Always actionable** - `changelog_content` always contains meaningful text
+- ✅ **Self-contained** - LLMs can provide specific upgrade advice without additional web requests
+- ✅ **Clear fallbacks** - When changelog fetching fails, the content explains what happened
+
+**Example changelog_content values:**
+- **Success**: Actual release notes from GitHub
+- **Fetch failed with source**: `"Changelog available at: https://github.com/user/repo/releases\n\nThe release notes exist but could not be automatically extracted. Visit the URL above for full details."`
+- **No source found**: `"Changelog could not be fetched automatically. No official changelog source was found."`
+
+With this structure, an LLM can immediately provide specific advice like:
 - "React 18.2.0 includes bug fixes for Suspense and fixes a memory leak in development mode. Safe to upgrade."
 - "This release was from June 2022, so it's well-tested and stable."
 
@@ -128,6 +138,7 @@ mcp-dependency-health/
 │   ├── server.py              # MCP server implementation
 │   └── services/              # Service layer
 │       ├── __init__.py
+│       ├── changelog_fetcher.py # Changelog content fetching
 │       ├── error_handlers.py  # Error handling utilities
 │       └── registry_clients.py # npm/PyPI registry clients
 │
@@ -179,8 +190,9 @@ uv run pytest
 2. **Ecosystem Detection**: Automatically determines if it's a JavaScript or Python project
 3. **Dependency Parsing**: Extracts package names and version specifications
 4. **Registry Queries**: Queries npm or PyPI for the latest versions and contextual information
-5. **Version Comparison**: Compares current versions with latest releases
-6. **Status Report**: Returns detailed information about each dependency with links to changelogs and release notes
+5. **Changelog Fetching**: Automatically fetches release notes from GitHub releases (when available)
+6. **Version Comparison**: Compares current versions with latest releases
+7. **Status Report**: Returns detailed information about each dependency with actual changelog content and links
 
 ## Limitations
 

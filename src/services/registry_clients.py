@@ -4,15 +4,15 @@ from typing import Optional
 import httpx
 from packaging.version import Version, InvalidVersion
 
+from src.services.changelog_fetcher import fetch_changelog_content
+
 
 @dataclass(frozen=True)
 class RegistryResult:
     latest: str
+    changelog_content: str  # Always present - contains release notes or explanation text
     note: Optional[str] = None
     release_date: Optional[str] = None
-    repository_url: Optional[str] = None
-    homepage_url: Optional[str] = None
-    changelog_url: Optional[str] = None
     description: Optional[str] = None
 
 
@@ -83,14 +83,15 @@ async def fetch_npm_latest(package_name: str) -> RegistryResult:
         if "github.com" in repository_url:
             base_url = repository_url.replace("git://", "https://").replace("git@github.com:", "https://github.com/")
             changelog_url = f"{base_url}/releases"
+    
+    # Fetch changelog content
+    changelog_content = await fetch_changelog_content(changelog_url, str(latest))
 
     return RegistryResult(
         latest=str(latest),
+        changelog_content=changelog_content,
         note=note,
         release_date=release_date,
-        repository_url=repository_url,
-        homepage_url=homepage,
-        changelog_url=changelog_url,
         description=description
     )
 
@@ -150,11 +151,12 @@ async def fetch_pypi_latest(package_name: str) -> RegistryResult:
             # Get upload_time from the first file in the release
             release_date = release_info[0].get("upload_time")
     
+    # Fetch changelog content
+    changelog_content = await fetch_changelog_content(changelog_url, str(latest))
+    
     return RegistryResult(
         latest=str(latest),
+        changelog_content=changelog_content,
         release_date=release_date,
-        repository_url=repository_url,
-        homepage_url=homepage,
-        changelog_url=changelog_url,
         description=description
     )
